@@ -1,0 +1,117 @@
+<script type="text/javascript">
+    RED.nodes.registerType('pattern-matcher',{
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: {value:""},
+            inputField: {value: "", required: true},
+            outputField: {value: "", required: true},
+            outputInEveryMsg: {value: true},
+            transitions: {value: []}
+        },
+        inputs:1,
+        outputs:1,
+        icon: "font-awesome/fa-cogs",
+        label: function() {
+            return this.name||"pattern-matcher"
+        },
+        oneditprepare: function() {
+            let node = this
+debugger
+            let transitionList = $("#node-input-transitions-container").css('min-height','200px').editableList({
+                header: $("<div>").css('padding-left','32px').append($.parseHTML(
+                    "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>State</b></div>" +
+                    "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Prev. State</b></div>" +
+                    "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Window</b></div>" +
+                    "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Count</b></div>" +
+                    "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Min.</b></div>" +
+                    "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Max.</b></div>" )),
+                addItem: function(container, i, transition) {
+                    // Add a new row to the editableList
+                    let row = $('<div/>').appendTo(container)
+
+                    // Column 1
+                    let stateField = $('<input/>',{class:"node-input-transition-state",type:"text"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
+                    stateField.val(transition.state)
+
+                    // Column 2
+                    let previousStateField = $('<input/>',{class:"node-input-transition-previousState",type:"text"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
+                    previousStateField.val(transition.previousState)
+
+                    // Column 3
+                    let windowLengthField = $('<input/>',{class:"node-input-transition-windowLength",type:"text"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
+                    windowLengthField.val(transition.windowLength)
+
+                    // Column 4
+                    let minimumCountField = $('<input/>',{class:"node-input-transition-minimumCount",type:"text"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
+                    minimumCountField.val(transition.minimumCount)
+
+                    // Column 5
+                    let minimumValueField = $('<input/>',{class:"node-input-transition-minimumValue",type:"text"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
+                    minimumValueField.val(transition.minimumValue)
+
+                    // Column 6
+                    let maximumValueField = $('<input/>',{class:"node-input-transition-maximumValue",type:"text"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
+                    maximumValueField.val(transition.maximumValue)
+                },
+                removable: true,
+                sortable:true
+            })
+
+            // Show all the transitions (stored in this node) into the editableList
+            if (this.transitions) {
+                this.transitions.forEach(function(transition, index) {
+                    transitionList.editableList('addItem', transition)
+                })
+            }
+
+        },
+        oneditsave: function() {
+            let node = this
+
+            // Copy all the state transitions from the editableList to this node
+            node.transitions = []
+            let transitionList = $("#node-input-transitions-container").editableList('items')
+            transitionList.each(function(i) {
+                let transition = $(this)
+
+                node.transitions.push({
+                    state:         transition.find(".node-input-transition-state").val(),
+                    previousState: transition.find(".node-input-transition-previousState").val(),
+                    windowLength:  transition.find(".node-input-transition-windowLength").val(),
+                    minimumCount:  transition.find(".node-input-transition-minimumCount").val(),
+                    minimumValue:  transition.find(".node-input-transition-minimumValue").val(),
+                    maximumValue:  transition.find(".node-input-transition-maximumValue").val()
+                })
+            })
+        }
+    })
+</script>
+
+<script type="text/x-red" data-template-name="pattern-matcher">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-inputField"><i class="fa fa-sign-in"></i> Input</label>
+        <input type="text" id="node-input-inputField" placeholder="Field name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputField"><i class="fa fa-sign-out"></i> Output</label>
+        <input type="text" id="node-input-outputField" placeholder="Field name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputInEveryMsg"><i class="fa fa-trash"></i> Subfolders</label>
+        <input type="checkbox" id="node-input-outputInEveryMsg" style="width:auto ;border:none; vertical-align:baseline;">
+        <span for="node-input-outputInEveryMsg"> Add the output to every output msg</span>
+    </div>
+    <div class="form-row">
+        <!-- Table with state transitions -->
+        <ol id="node-input-transitions-container"></ol>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="pattern-matcher">
+    <p>A node that matches patterns based on the provided configuration.</p>
+</script>
