@@ -6,19 +6,29 @@
             name: {value:""},
             inputField: {value: "", required: true},
             outputField: {value: "", required: true},
-            outputInEveryMsg: {value: true},
+            outputFieldType: {value: "none"},
             transitions: {value: []}
         },
-        inputs:1,
-        outputs:1,
+        inputs: 1,
+        outputs: 2,
         icon: "font-awesome/fa-cogs",
+        outputLabels: ["input msg", "state"],
         label: function() {
             return this.name||"pattern-matcher"
         },
         oneditprepare: function() {
             let node = this
-debugger
-            let transitionList = $("#node-input-transitions-container").css('min-height','200px').editableList({
+
+            $('#node-input-outputField').typedInput({
+                default: 'none',
+                typeField: $('#node-input-outputFieldType'),
+                types: [
+                    'msg',
+                    {value: 'none', label: 'None', hasValue: false}
+                ]
+            })
+
+            let transitionList = $("#node-input-transitions-container").css('min-height','100%').editableList({
                 header: $("<div>").css('padding-left','32px').append($.parseHTML(
                     "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>State</b></div>" +
                     "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Prev. State</b></div>" +
@@ -99,14 +109,11 @@ debugger
     </div>
     <div class="form-row">
         <label for="node-input-outputField"><i class="fa fa-sign-out"></i> Output</label>
-        <input type="text" id="node-input-outputField" placeholder="Field name">
+        <input type="text" id="node-input-outputField" placeholder="Field name" style="width: 70%;">
+        <input type="hidden" id="node-input-outputFieldType">
     </div>
-    <div class="form-row">
-        <label for="node-input-outputInEveryMsg"><i class="fa fa-trash"></i> Subfolders</label>
-        <input type="checkbox" id="node-input-outputInEveryMsg" style="width:auto ;border:none; vertical-align:baseline;">
-        <span for="node-input-outputInEveryMsg"> Add the output to every output msg</span>
-    </div>
-    <div class="form-row">
+    <br>
+    <div class="form-row" style="height:calc(100% - 100px)">
         <!-- Table with state transitions -->
         <ol id="node-input-transitions-container"></ol>
     </div>
