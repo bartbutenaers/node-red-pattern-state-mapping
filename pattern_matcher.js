@@ -3,9 +3,6 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config)
         let node = this
 
-// TODO
-//  inputField en outputField
-
         function resetMovingWindows() {
             config.transitions.forEach((transition) => {
                 transition.movingWindow = []
@@ -15,8 +12,9 @@ module.exports = function(RED) {
         // TODO: Specify the default state in the config screen
         node.currentState = 'OFF'
         node.history = []
-
         resetMovingWindows()
+
+        node.status({fill: 'blue', shape: 'dot', text: node.currentState})
 
         function addSample(sample) {
             config.transitions.forEach((transition) => {
@@ -56,15 +54,20 @@ module.exports = function(RED) {
                 if (trueCount >= transition.minimumCount) {
                     const oldState = node.currentState
                     node.currentState = transition.state
+                    node.status({fill: 'blue', shape: 'dot', text: node.currentState})
 
                     // Get all the elements from movingWindow starting from the first one that has inRange = true
                     let samplesNewState = transition.movingWindow.filter((val) => val.inRange)
 
-                    node.history.push({
-                        sample: samplesNewState[0].sample, // First sample in the samplesNewState
-                        oldState: oldState,
-                        newState: node.currentState,
-                    })
+                    let outputMsg = {
+                        payload: {
+                            sample: samplesNewState[0].sample, // First sample in the samplesNewState
+                            oldState: oldState,
+                            newState: node.currentState,
+                        }
+                    }
+
+                    node.send([null, outputMsg])
 
                     // Start all over again to determine the transition to the next state
                     resetMovingWindows()
@@ -79,8 +82,9 @@ module.exports = function(RED) {
             try {
                 if (Array.isArray(msg.payload)) {
                     // TODO: Specify the default state in the config screen
-                    node.currentState = 'OFF'
                     node.history = []
+                    node.currentState = 'OFF'
+                    node.status({fill: 'blue', shape: 'dot', text: node.currentState})
 
                     resetMovingWindows()
 
@@ -88,16 +92,29 @@ module.exports = function(RED) {
                     samples.forEach((sample) => {
                         addSample(sample)
                     })
-                    msg.payload = node.history
+
+                    if (config.outputField !== 'none') {
+                        // When the input is an array of samples, the output should also contain the array of states
+                        RED.util.setMessageProperty(msg, config.outputField, node.history, true)
+                    }
                 } else {
                     let sample = msg.payload
                     addSample(sample)
+
+                    if (config.outputField !== 'none') {
+                        // When the input is a single sample, the output should contain the current state
+                        RED.util.setMessageProperty(msg, config.outputField, node.currentState, true)
+                    }
                 }
+
+                node.send([msg, null])
             } catch(err) {
                 node.error(err)
             }
+        })
 
-            node.send(msg)
+        node.on('close', function() {
+            node.status({})
         })
     }
     RED.nodes.registerType('pattern-matcher', PatternMatcherNode)
