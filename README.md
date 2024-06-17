@@ -1,5 +1,5 @@
-# @bartbutenaers/node-red-pattern-state-extractor
-A Node-RED node to extract states from a numeric pattern
+# @bartbutenaers/node-red-pattern-state-mapping
+A Node-RED node to map numeric patterns to states.
 
 ## Installation
 
@@ -7,7 +7,7 @@ Since this node is in an experimental phase, it is ***not*** available on NPM ye
 
 Run the following npm command in your Node-RED user directory (typically ~/.node-red), to install this node directly from this Github repo:
 ```
-npm install bartbutenaers/node-red-pattern-state-extractor
+npm install bartbutenaers/node-red-pattern-state-mapping
 ```
 Note that you need to have Git installed, in order to be able to execute this command.
 
