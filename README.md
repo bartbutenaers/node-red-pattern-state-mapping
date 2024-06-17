@@ -22,21 +22,48 @@ Let's use for example the energy consumption pattern of a washing machine, which
 
 ![image](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/7d7f7f22-8120-4050-832f-77d0e750c872)
 
-Sometimes it is useful to determine those states and handle them in Node-RED.  Below is explained step by step how to accomplish that:
+Sometimes it is useful to determine those states and handle them in Node-RED.  The following example flow demonstrates how this node extracts the states from the injected array of samples:
 
-1. Determine the magnitude of values in the various states.  This can e.g. be done by showing the values in a chart in the Node-RED dashboard:
+
+Note that this node has two outputs:
++ On the first output, the input samples will be forwarded.  These samples might be enriched with the state (when the 'Output' property is specified).
++ On the second output, a message will occur for every state change.  The output message will contain both the sample (where the state change occurred from the input message) in the `payload`, the `oldState` and the `newState`.
+
+## Node properties
+
+### Input:
+The name of the numerical property in each input sample.  The `msg.payload` of the input message can contain a single sample, or an array of samples.  Each sample is an object that should contain the specified input property.
+
+### Output:
+The name of the property in each output sample where the state will be stored.  If specified, each sample object will get such a property, that specifies in which state the sample occured.
+
+### Transitions:
+Specify which transitions (from one state to another) are allowed.  Each transition has the following properties:
+
++ *State*: the name of the new state that will start, as soon as this numeric pattern is detected in the sequence of input sample numbers.
++ *Previous state*: the name of the previous state, which is required to start this transition to the new state.  This property should refer to one of the specifed states (from the other transitions).
++ *Length*: the length of the pattern, i.e. total amount of numeric values in the pattern.
++ *Count*: the minimum count of numbers in the pattern, which should be in the specified min-max range.  Because ofen not all numeric values will be within the specified range, but it is sufficient that most numbers do.
++ *Min*: the minimum value required for the numbers in the pattern. If empty, then there is no minimum.
++ *Max*: the maximum value required for the numbers in the pattern. If empty, then there is no maximum.
+
+## Step-by-step tutorial
+
+Below is explained detailed to accomplish that:
+
+1. Determine the magnitude of the numeric values in the various states, to get an idea of the ranges that need to be entered.  This can e.g. be done by showing the values in a chart in the Node-RED dashboard:
 
    ![chart_values](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/287d7a7c-3b02-4059-b6ba-edd8cb3b0909)
 
 2. The payload of the input messages can be:
-   + An array of samples: the node will automatically reset and try to find the states.  This can be used e.g. when historical samples are loaded from a timeseries database.
-   + A single sample: the node will append this sample to the previously injected samples and combine them to try to find the next state.  This can be used e.g. when a new measurement arrives, in case of live measuring the power consumtpion of a device.
+   + *An array of samples*: the node will automatically reset and try to find the specified transitions and corresponding states in the input array.  This can be used e.g. when an array of historical samples is loaded from a timeseries database.
+   + *A single sample*: the node will append this sample to the previously injected samples and combine them to try to find the next state.  This can be used e.g. when a new measurement arrives, in case of live measuring the power consumtpion of a device.
 
-   Each of those samples needs to be an object, containing some property with a numerical value (that will be evaluated).  The name of that numerical property should be specified.  For example for samples of the format `{x: 2024-05-27T04:45:07.217Z, y: 2713}` the following setting is required:
+   Each of those samples needs to be an object, containing some ***input*** property with a numerical value (that will be evaluated).  The name of that numerical property should be specified.  For example for samples of the format `{x: 2024-05-27T04:45:07.217Z, y: 2713}` the following setting is required:
 
    ![image](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/6e842b75-d449-4798-8fdc-900d0b78b058)
 
-3. Enter in this node which sequence of values indicate the start of a new state:
+3. Enter in this node which transitions trigger the start of a new state:
 
    ![image](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/aed6d51d-60ee-4ea2-a5b5-610eb1aa33c6)
 
@@ -48,7 +75,7 @@ Sometimes it is useful to determine those states and handle them in Node-RED.  B
    + *Min*: the minimum numerical value that is expected.  If left empty there will be no minimum.
    + *Max*: the maximum numerical value that is expected.  If left empty there will be no maximum.
 
-   Let's explain the first rule in the above screenshot:  The state will become "FILL" if the previous state is "OFF", and minimum 2 of 3 successive values is above 50.
+   Let's explain the first rule from the above screenshot:  The state will become "FILL" if the previous state is "OFF", and minimum 2 of 3 successive values is above value 50.
 
 5. Inject a single message whose payload contains an array of samples, or inject a series of messages each containing a single sample in the payload.
 
@@ -59,5 +86,3 @@ Sometimes it is useful to determine those states and handle them in Node-RED.  B
    ![image](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/b94c7354-b8b8-4b1e-bec5-6091436e8580)
 
    The resulting sample will look like this:
-
-TODO: windown hernoemen naar length & output field werkt niet & info panel toevoegen & dit aan wiki toevoegen
