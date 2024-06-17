@@ -1,5 +1,5 @@
 <script type="text/javascript">
-    RED.nodes.registerType('pattern-state-extractor',{
+    RED.nodes.registerType('pattern-matcher',{
         category: 'function',
         color: '#a6bbcf',
         defaults: {
@@ -32,7 +32,7 @@
                 header: $("<div>").css('padding-left','32px').append($.parseHTML(
                     "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>State</b></div>" +
                     "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Prev. State</b></div>" +
-                    "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Window</b></div>" +
+                    "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Length</b></div>" +
                     "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Count</b></div>" +
                     "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Min.</b></div>" +
                     "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Max.</b></div>" )),
@@ -98,7 +98,7 @@
     })
 </script>
 
-<script type="text/x-red" data-template-name="pattern-state-extractor">
+<script type="text/x-red" data-template-name="pattern-matcher">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
