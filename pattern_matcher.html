@@ -120,5 +120,17 @@
 </script>
 
 <script type="text/x-red" data-help-name="pattern-matcher">
-    <p>A node that matches patterns based on the provided configuration.</p>
+    <p>A Node-RED node to map numeric patterns to states.</p>
+    <p><strong>Input:</strong><br/> the name of the numerical property in each input sample.  Not that the <code>msg.payload</code> can contain a single sample object, or an array of sample objects.</p>
+    <p><strong>Output:</strong><br/> the name of the property in each output sample, where the state will be stored.</p>
+    <p><strong>Transitions:</strong><br/> Specify which transitions (from one state to another) are allowed:
+        <ul>
+            <li><i>State</i>: the name of the new state that will start when this numeric sequence occurs.</li>
+            <li><i>Previous state</i>: the name of the previous state, which is required to start this transition to a new state.</li>
+            <li><i>Length</i>: the length of the pattern.</li>
+            <li><i>Count</i>: the minimum count of numbers in the pattern, which should be in the specified min-max range.</li>
+            <li><i>Min</i>: the minimum value required for the numbers in the pattern. If empty, then there is no minimum/li>
+            <li><i>Max</i>: the maximum value required for the numbers in the pattern. If empty, then there is no maximum./li>
+        </ul>
+    </p>
 </script>
