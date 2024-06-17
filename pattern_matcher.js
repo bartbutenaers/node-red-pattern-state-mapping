@@ -1,5 +1,5 @@
 module.exports = function(RED) {
-    function PatternMatcherNode(config) {
+    function PatternStateMappingNode(config) {
         RED.nodes.createNode(this, config)
         let node = this
 
@@ -183,5 +183,5 @@ module.exports = function(RED) {
             node.status({})
         })
     }
-    RED.nodes.registerType('pattern-matcher', PatternMatcherNode)
+    RED.nodes.registerType('pattern-state-mapping', PatternStateMappingNode)
 }
