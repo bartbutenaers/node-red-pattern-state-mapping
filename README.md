@@ -67,9 +67,9 @@ Below is explained detailed to accomplish that:
 
    ![image](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/6e842b75-d449-4798-8fdc-900d0b78b058)
 
-3. Enter in this node which transitions trigger the start of a new state:
+3. Enter in this node which ***transitions*** (from one state to another) trigger the start of a new state:
 
-   ![image](https://github.com/bartbutenaers/node-red-pattern-state-extractor/assets/14224149/aed6d51d-60ee-4ea2-a5b5-610eb1aa33c6)
+   ![image](https://github.com/bartbutenaers/node-red-pattern-state-mapping/assets/14224149/49916741-71a1-4e7b-ae9e-24c3fec9e957)
 
    Every sequence has the following properties:
    + *State*: the name of the new state that will start when this numeric sequence occurs.
