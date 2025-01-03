@@ -4,10 +4,23 @@
         color: '#a6bbcf',
         defaults: {
             name: {value:""},
-            inputField: {value: "", required: true},
+            inputField: {value: ""},
+            inputFieldType: {value: "key"},
             outputField: {value: "", required: true},
             outputFieldType: {value: "none"},
-            transitions: {value: []}
+            transitions: {value: [], validate: function(v) {
+                return v.every(transition => {
+                    if (transition.previousStateType === 'json') {
+                        try {
+                            const parsedState = JSON.parse(transition.previousState)
+                            return Array.isArray(parsedState)
+                        } catch (e) {
+                            return false
+                        }
+                    }
+                    return true
+                })
+            }}
         },
         inputs: 1,
         outputs: 2,
@@ -18,6 +31,12 @@
         },
         oneditprepare: function() {
             let node = this
+
+            $('#node-input-inputField').typedInput({
+                default: '',
+                typeField: $('#node-input-inputFieldType'),
+                types: [ {value: 'key', label: 'Key', hasValue: true} ]
+            })
 
             $('#node-input-outputField').typedInput({
                 default: 'none',
@@ -31,7 +50,7 @@
             let transitionList = $("#node-input-transitions-container").css('min-height','100%').editableList({
                 header: $("<div>").css('padding-left','32px').append($.parseHTML(
                     "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>State</b></div>" +
-                    "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Prev. State</b></div>" +
+                    "<div style='width:20%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Prev. State(s)</b></div>" +
                     "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Length</b></div>" +
                     "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Count</b></div>" +
                     "<div style='width:10%; display:inline-grid; margin-left:5px; margin-right:5px'><b>Min.</b></div>" +
@@ -47,6 +66,15 @@
                     // Column 2
                     let previousStateField = $('<input/>',{class:"node-input-transition-previousState",type:"text"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
                     previousStateField.val(transition.previousState)
+
+                    let previousStateTypeField = $('<input/>',{class:"node-input-transition-previousStateType",type:"hidden"}).appendTo(row)
+                    previousStateTypeField.val(transition.previousStateType)
+
+                    previousStateField.typedInput({
+                        default: 'str',
+                        typeField: previousStateTypeField,
+                        types: [ 'str', 'json' ]
+                    })
 
                     // Column 3
                     let windowLengthField = $('<input/>',{class:"node-input-transition-windowLength",type:"text"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row)
@@ -86,12 +114,13 @@
                 let transition = $(this)
 
                 node.transitions.push({
-                    state:         transition.find(".node-input-transition-state").val(),
+                    state: transition.find(".node-input-transition-state").val(),
                     previousState: transition.find(".node-input-transition-previousState").val(),
-                    windowLength:  transition.find(".node-input-transition-windowLength").val(),
-                    minimumCount:  transition.find(".node-input-transition-minimumCount").val(),
-                    minimumValue:  transition.find(".node-input-transition-minimumValue").val(),
-                    maximumValue:  transition.find(".node-input-transition-maximumValue").val()
+                    previousStateType: transition.find(".node-input-transition-previousStateType").val(),
+                    windowLength: transition.find(".node-input-transition-windowLength").val(),
+                    minimumCount: transition.find(".node-input-transition-minimumCount").val(),
+                    minimumValue: transition.find(".node-input-transition-minimumValue").val(),
+                    maximumValue: transition.find(".node-input-transition-maximumValue").val()
                 })
             })
         }
@@ -106,6 +135,7 @@
     <div class="form-row">
         <label for="node-input-inputField"><i class="fa fa-sign-in"></i> Input</label>
         <input type="text" id="node-input-inputField" placeholder="Field name">
+        <input type="hidden" id="node-input-inputFieldType">
     </div>
     <div class="form-row">
         <label for="node-input-outputField"><i class="fa fa-sign-out"></i> Output</label>
@@ -121,12 +151,18 @@
 
 <script type="text/x-red" data-help-name="pattern-matcher">
     <p>A Node-RED node to map numeric patterns to states.</p>
-    <p><strong>Input:</strong><br/> the name of the numerical property in each input sample.  Not that the <code>msg.payload</code> can contain a single sample object, or an array of sample objects.</p>
+    <p><strong>Input:</strong><br/> the name of the numerical property (key) in each input sample.  The <code>msg.payload</code> can contain:
+        <ul>
+            <li> A single sample object, which should contain a property with the specified key.</li>
+            <li> An array of sample objects, which all should contain a property with the specified key.</li>
+            <li> A number, which means the key value should left empty!</li>
+        </ul>
+    </p>
     <p><strong>Output:</strong><br/> the name of the property in each output sample, where the state will be stored.</p>
     <p><strong>Transitions:</strong><br/> Specify which transitions (from one state to another) are allowed:
         <ul>
             <li><i>State</i>: the name of the new state that will start when this numeric sequence occurs.</li>
-            <li><i>Previous state</i>: the name of the previous state, which is required to start this transition to a new state.</li>
+            <li><i>Previous state</i>: the name of the previous state, which is required to start this transition to a new state.  When an array of multiple previous state names is specified, the new state can follow up any of those states (i.e. an OR condition)</li>
             <li><i>Length</i>: the length of the pattern.</li>
             <li><i>Count</i>: the minimum count of numbers in the pattern, which should be in the specified min-max range.</li>
             <li><i>Min</i>: the minimum value required for the numbers in the pattern. If empty, then there is no minimum/li>
