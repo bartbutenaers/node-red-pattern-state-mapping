@@ -3,22 +3,53 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config)
         let node = this
 
-        // TODO: Specify the default state in the config screen
-        node.defaultState = 'OFF'
-
-        node.currentState = node.defaultState
+        node.currentState = ''
         node.movingWindow = []
         node.validConfig = true
 
         const states = new Set(config.transitions.map((t) => t.state))
-        const previousStates = new Set(config.transitions.map((t) => t.previousState))
+
+        const previousStates = new Set()
+        config.transitions.forEach((t) => {
+            switch (t.previousStateType) {
+                case 'str':
+                    previousStates.add(t.previousState)
+                    break
+                case 'json':
+                    // The previous state is a json string
+                    t.previousState = JSON.parse(t.previousState)
+
+                    if (Array.isArray(t.previousState)) {
+                        t.previousState.forEach(previousState => previousStates.add(previousState))
+                    } else {
+                        console.error(`All previous states of type 'json' should be arrays`)
+                        node.validConfig = false
+                    }
+            }
+        })
 
         // All the transition previous states should refer to a valid state.
-        // The previous state is optional in the config screen: '' means that any state can be the previous state
+        // The previous state is optional in the config screen: '' or [] means that any state can be the previous state
         config.transitions.forEach((transition) => {
-            if (transition.previousState !== '' && !states.has(transition.previousState)) {
-                console.error(`Previous state "${transition.previousState}" is referring to a non-existing state.`)
-                node.validConfig = false
+            switch (transition.previousStateType) {
+                case 'str':
+                    if (transition.previousState !== '' && !states.has(transition.previousState)) {
+                        console.error(`Previous state "${transition.previousState}" is referring to a non-existing state.`)
+                        node.validConfig = false
+                    }
+                    break
+                case 'json':
+                    if (Array.isArray(transition.previousState)) {
+                        transition.previousState.forEach(previousState => {
+                            if (previousState !== '' && !states.has(previousState)) {
+                                console.error(`Previous state "${previousState}" in the array is referring to a non-existing state.`)
+                                node.validConfig = false
+                            }
+                        })
+                    } else {
+                        console.error(`All previous states of type 'json' should be arrays`)
+                        node.validConfig = false
+                    }
             }
         })
 
@@ -56,7 +87,7 @@ module.exports = function(RED) {
 
             // When no state has been determined yet for this sample, then apply the current state to it
             if (!removedSample.state) {
-                removedSample.state =  node.currentState || node.defaultState
+                removedSample.state =  node.currentState || ''
             }
 
             // Add the state to the sample object, when required
@@ -72,8 +103,15 @@ module.exports = function(RED) {
         }
 
         function addSample(sample, sendWhenStateReady) {
-            if (typeof sample !== 'object' || !sample.hasOwnProperty(config.inputField) || typeof sample[config.inputField] !== 'number') {
-                throw new Error(`Every sample should be an object with a numeric property "${config.inputField}"`)
+            if (config.inputField && config.inputField.trim() !== '') {
+                if (typeof sample !== 'object' || !sample.hasOwnProperty(config.inputField) || typeof sample[config.inputField] !== 'number') {
+                    throw new Error(`Every sample object in msg.payload should be an object with a numeric property "${config.inputField}"`)
+                }
+            }
+            else {
+                if (typeof sample !== 'number') {
+                    throw new Error(`The msg.payload should contain a number`)
+                }
             }
 
             // Move the window one sample further, by adding the new sample to the window
@@ -86,7 +124,14 @@ module.exports = function(RED) {
             }
 
             // Get all transitions that are allowed starting from the current state
-            let allowedTransitions = config.transitions.filter((t) => t.previousState === node.currentState)
+            let allowedTransitions = config.transitions.filter((t) => {
+                switch (t.previousStateType) {
+                    case 'str':
+                        return t.previousState === '' || t.previousState === node.currentState
+                    case 'json':
+                        return Array.isArray(t.previousState) && (t.previousState.length === 0 || t.previousState.includes(node.currentState))
+                }
+            })
 
             for (let i = 0; i < allowedTransitions.length; i++) {
                 let transition = allowedTransitions[i]
@@ -100,8 +145,15 @@ module.exports = function(RED) {
 
                     // Ignore samples that belong to the previous state (i.e. which have been assigned a state already)
                     if (!movingWindowElement.state) {
-                        // Get the numerical value from the sample
-                        let value = movingWindowElement.sample[config.inputField]
+                        let value
+
+                        // Get the numerical value from the sample (which can be a number or an object containing a numeric property)
+                        if (typeof movingWindowElement.sample === 'number') {
+                            value = movingWindowElement.sample
+                        }
+                        else {
+                            value = movingWindowElement.sample[config.inputField]
+                        }
 
                         if (value >= transition.minimumValue && value <= transition.maximumValue) {
                             inRangeCount++
@@ -125,8 +177,14 @@ module.exports = function(RED) {
                             continue
                         }
 
-                        // Get the numerical value from the sample
-                        let value = movingWindowElement.sample[config.inputField]
+                        // Get the numerical value from the sample (which can be a number or an object containing a numeric property)
+                        let value
+                        if (typeof movingWindowElement.sample === 'number') {
+                            value = movingWindowElement.sample
+                        }
+                        else {
+                            value = movingWindowElement.sample[config.inputField]
+                        }
 
                         if (value >= transition.minimumValue && value <= transition.maximumValue) {
                             // The first sample with a value in range (for this transition), will be the start of the new state.
@@ -153,8 +211,7 @@ module.exports = function(RED) {
         node.on('input', function(msg) {
             try {
                 if (Array.isArray(msg.payload)) {
-                    // TODO: Specify the default state in the config screen
-                    node.currentState = 'OFF'
+                    node.currentState = ''
                     node.movingWindow = []
                     node.status({fill: 'blue', shape: 'dot', text: node.currentState})
 
